@@ -192,6 +192,13 @@ function container()
 					dialogGroups["Order Number"]["input"] = newGroup.add("edittext", undefined, onContents)
 					dialogGroups["Order Number"]["input"].characters = 20;
 					dialogGroups["Order Number"]["input"].active = true;
+					dialogGroups["Order Number"]["input"].addEventListener("keydown",function(key)
+					{
+						if(key.keyName === "Enter")
+						{
+							submitFunction();
+						}
+					})
 
 
 					//team name
@@ -210,6 +217,13 @@ function container()
 					dialogGroups["Team Name"]["static"] = newNewGroup.add("statictext", undefined, "Team Name");
 					dialogGroups["Team Name"]["input"] = newNewGroup.add("edittext", undefined, tnContents);
 					dialogGroups["Team Name"]["input"].characters = 20;
+					dialogGroups["Team Name"]["input"].addEventListener("keydown",function(key)
+					{
+						if(key.keyName === "Enter")
+						{
+							submitFunction();
+						}
+					})
 				}
 
 				else if(thisFrame.name == "Mockup Initials")
@@ -222,6 +236,13 @@ function container()
 					dialogGroups["Mockup Initials"]["static"] = newGroup.add("statictext", undefined, "Mockup Initials");
 					dialogGroups["Mockup Initials"]["input"] = newGroup.add("edittext", undefined, cont);
 					dialogGroups["Mockup Initials"]["input"].characters = 20;
+					dialogGroups["Mockup Initials"]["input"].addEventListener("keydown",function(key)
+					{
+						if(key.keyName === "Enter")
+						{
+							submitFunction();
+						}
+					})
 				}
 				else if(thisFrame.name.indexOf("Garment Code")>-1 || thisFrame.name.indexOf("Garment Description")>-1)
 				{
@@ -233,6 +254,13 @@ function container()
 					dialogGroups[thisFrame.name]["input"].characters = 20;
 					dialogGroups[thisFrame.name]["input"].enabled = false;
 					dialogGroups[thisFrame.name]["mo"] = true;
+					dialogGroups[thisFrame.name]["input"].addEventListener("keydown",function(key)
+					{
+						if(key.keyName === "Enter")
+						{
+							submitFunction();
+						}
+					})
 				}
 				else
 				{
@@ -243,8 +271,16 @@ function container()
 					dialogGroups[thisFrame.name]["static"] = newGroup.add("statictext", undefined, thisFrame.name);
 					dialogGroups[thisFrame.name]["input"] = newGroup.add("edittext", undefined, cont);
 					dialogGroups[thisFrame.name]["input"].characters = 20;
+					dialogGroups[thisFrame.name]["input"].addEventListener("keydown",function(key)
+					{
+						if(key.keyName === "Enter")
+						{
+							submitFunction();
+						}
+					})
 				}
 			}
+
 
 			//add submit and cancel buttons
 
