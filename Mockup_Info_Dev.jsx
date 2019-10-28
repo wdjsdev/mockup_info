@@ -47,6 +47,7 @@ function container()
 {
 
 	var valid = true;
+	var scriptName = "mockup_info";
 
 	//Production Utilities
 	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/Utilities_Container.jsxbin\"");
