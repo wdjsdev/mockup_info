@@ -171,7 +171,11 @@ function mockupInfo()
 		{
 			curFrame = infoLay.textFrames[x];
 			curName = curFrame.name;
-			if(!frameInfo[curName])
+			if(persistentInfo[curName])
+			{
+				frameInfo[curName] = persistentInfo[curName];
+			}
+			else if(!frameInfo[curName])
 			{
 				//strip out date from initials frame
 				frameInfo[curName] = curFrame.contents.replace(/\s[\d]{2}\.[\d]{2}\.[\d]{2}/,"");
@@ -221,15 +225,12 @@ function mockupInfo()
 		var cancel = UI.button(btnGroup,"Cancel",function()
 		{
 			valid = false;
+			frameInfo = undefined;
 			w.close();
 		})
 		var submit = UI.button(btnGroup,"Submit",function()
 		{
-			for(var x=0;x<inputGroups.length;x++)
-			{
-				frameInfo[inputGroups[x].msg.text] = inputGroups[x].input.text + (inputGroups[x].msg.text.toLowerCase().indexOf("init")>-1 ? " " + getDate() : "");
-				persistentInfo[inputGroups[x].msg.text] = frameInfo[inputGroups[x].msg.text];
-			}
+			submitDialog(inputGroups);
 			w.close();
 		})
 		w.show();
@@ -238,6 +239,15 @@ function mockupInfo()
 		
 
 
+	}
+
+	function submitDialog(inputGroups)
+	{
+		for(var x=0;x<inputGroups.length;x++)
+		{
+			frameInfo[inputGroups[x].msg.text] = inputGroups[x].input.text + (inputGroups[x].msg.text.toLowerCase().indexOf("init")>-1 ? " " + getDate() : "");
+			persistentInfo[inputGroups[x].msg.text] = frameInfo[inputGroups[x].msg.text];
+		}
 	}
 
 	function getDate()
