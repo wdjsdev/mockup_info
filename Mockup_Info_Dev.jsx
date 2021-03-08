@@ -68,11 +68,13 @@ function mockupInfo()
 		log.h("Beginning execution of findGarmentLayers() function.");
 		var result = [];
 
+		var garPat = /[fbpm][dmsb][b]?[-_]/i
+
 		var curLay;
 		for(var x=0,len=layers.length;x<len;x++)
 		{
 			curLay = layers[x];
-			if(isTemplate(curLay))
+			if(garPat.test(curLay) && findSpecificLayer(curLay,"info","any"))
 			{
 				log.l("pushing " + curLay + " to result array.");
 				result.push(curLay);
@@ -187,17 +189,26 @@ function mockupInfo()
 
 		var counter = 0;
 		var curGroup;
-		var len = 25;
+		var len = 20;
 
 
 
 		var label;
 		for(var frameName in frameInfo)
 		{
+
 			if(frameName.indexOf("Order")>-1)
 				label = "Order Number";
 			else
 				label = frameName
+
+
+			//check for hidden items
+			if(hiddenFrames.indexOf(label.toLowerCase())>-1)
+			{
+				continue;
+			}
+
 			inputGroups[counter] = curGroup = UI.group(w);
 			inputGroups[counter].orientation = "row";
 			inputGroups[counter].msg = UI.static(curGroup,label,len);
@@ -217,6 +228,7 @@ function mockupInfo()
 			for(var x=0;x<inputGroups.length;x++)
 			{
 				frameInfo[inputGroups[x].msg.text] = inputGroups[x].input.text + (inputGroups[x].msg.text.toLowerCase().indexOf("init")>-1 ? " " + getDate() : "");
+				persistentInfo[inputGroups[x].msg.text] = frameInfo[inputGroups[x].msg.text];
 			}
 			w.close();
 		})
@@ -277,10 +289,15 @@ function mockupInfo()
 	var layers = docRef.layers;
 	var garmentLayers = findGarmentLayers();
 
+	//when submitting the dialog for the first garment
+	//save all the info to this object to be used in 
+	//the next dialog
+	var persistentInfo = {};
+
 	//list of things we typically don't want to change.
 	//put these at the bottom of the dialog and disable them
 	//by default
-	var hiddenFrames = ["garment description","garment code"];
+	var hiddenFrames = ["garment description","garment code","fabric type"];
 
 
 
