@@ -128,12 +128,15 @@ function mockupInfo()
 			else
 			{
 				errorList.push(curGarmentLayer.name + " has no Information Layer.");
+				continue;
 			}
 
 			if(newFrameInfo)
 			{
 				updateFrames(curInfoLayer,newFrameInfo);
 			}
+			newFrameInfo = undefined;
+			curInfoLayer.locked = true;
 		}
 	}
 
@@ -147,23 +150,15 @@ function mockupInfo()
 			key = curFrame.name;
 			if(frameInfo[key])
 			{
-				curFrame.contents = frameInfo[key];
+				
+				curFrame.contents = frameInfo[key] + (key.match(/init/i) ?  " " + getDate() : "");
 			}
 		}
 	}
 
 	function getFrameInfo(infoLay)
 	{
-		/*
-		frameInfo format is like so:
-			frameInfo = 
-				{
-					"textFrame.name":"textFrame.contents",
-					"Order Number" : "1234567_Team Name_IN",
-					"Name":"xxxx"
-				}
-		*/
-		var frameInfo = {};
+		
 
 
 		var curFrame,curName,curContents;
@@ -171,15 +166,12 @@ function mockupInfo()
 		{
 			curFrame = infoLay.textFrames[x];
 			curName = curFrame.name;
-			if(persistentInfo[curName])
-			{
-				frameInfo[curName] = persistentInfo[curName];
-			}
-			else if(!frameInfo[curName])
+			if(!frameInfo[curName])
 			{
 				//strip out date from initials frame
-				frameInfo[curName] = curFrame.contents.replace(/\s[\d]{2}\.[\d]{2}\.[\d]{2}/,"");
+				frameInfo[curName] = trimDate(curFrame.contents);
 			}
+			
 		}
 		return frameInfo;
 	}
@@ -195,6 +187,7 @@ function mockupInfo()
 		var curGroup;
 		var len = 20;
 
+		
 
 
 		var label;
@@ -221,6 +214,8 @@ function mockupInfo()
 
 		}
 
+		inputGroups[0].input.active = true;
+
 		var btnGroup = UI.group(w);
 		var cancel = UI.button(btnGroup,"Cancel",function()
 		{
@@ -233,22 +228,38 @@ function mockupInfo()
 			submitDialog(inputGroups);
 			w.close();
 		})
+
+		w.addEventListener("keydown",function(k)
+		{
+			if(k.keyName == "Enter")
+			{
+				submitDialog(inputGroups);
+				w.close();
+			}
+		});
+
 		w.show();
 
 		return frameInfo;
 		
 
-
-	}
-
-	function submitDialog(inputGroups)
-	{
-		for(var x=0;x<inputGroups.length;x++)
+		function submitDialog()
 		{
-			frameInfo[inputGroups[x].msg.text] = inputGroups[x].input.text + (inputGroups[x].msg.text.toLowerCase().indexOf("init")>-1 ? " " + getDate() : "");
-			persistentInfo[inputGroups[x].msg.text] = frameInfo[inputGroups[x].msg.text];
+			for(var x=0;x<inputGroups.length;x++)
+			{
+				frameInfo[inputGroups[x].msg.text] = trimDate(inputGroups[x].input.text);
+			}
 		}
+
+
 	}
+
+	function trimDate(str)
+	{
+		return str.replace(/[\s-_]?[\d]{2}\.[\d]{2}\.[\d]{2}/g,"");	
+	}
+
+	
 
 	function getDate()
 	{
@@ -277,8 +288,13 @@ function mockupInfo()
 		var frames = arrayFromContainer(infoLay,"textFrames");
 		frames.forEach(function(a)
 		{
-			if(a.name.indexOf("Order Num")>-1 || a.name.indexOf("Initials")>-1)
+			if(a.name.match(/(order)/i))
 				a.zOrder(ZOrderMethod.BRINGTOFRONT);
+			else if(a.name.match(/init/i))
+			{
+				a.zOrder(ZOrderMethod.BRINGTOFRONT);
+				a.zOrder(ZOrderMethod.SENDBACKWARD);
+			}
 			else if(hiddenFrames.indexOf(a.name.toLowerCase())>-1)
 				a.zOrder(ZOrderMethod.SENDTOBACK);
 		})
@@ -299,10 +315,17 @@ function mockupInfo()
 	var layers = docRef.layers;
 	var garmentLayers = findGarmentLayers();
 
-	//when submitting the dialog for the first garment
-	//save all the info to this object to be used in 
-	//the next dialog
-	var persistentInfo = {};
+
+	/*
+	frameInfo format is like so:
+		frameInfo = 
+			{
+				"textFrame.name":"textFrame.contents",
+				"Order Number" : "1234567_Team Name_IN",
+				"Name":"xxxx"
+			}
+	*/
+	var frameInfo = {};
 
 	//list of things we typically don't want to change.
 	//put these at the bottom of the dialog and disable them
