@@ -122,7 +122,6 @@ function mockupInfo()
 			if(curInfoLayer)
 			{
 				setActiveArtboard(curInfoLayer);
-				rearrangeInfoTextFrames(curInfoLayer);
 				newFrameInfo = createDialog(garmentLayers[x].name,getFrameInfo(curInfoLayer));
 			}
 			else
@@ -150,7 +149,6 @@ function mockupInfo()
 			key = curFrame.name;
 			if(frameInfo[key])
 			{
-				
 				curFrame.contents = frameInfo[key] + (key.match(/init/i) ?  " " + getDate() : "");
 			}
 		}
@@ -158,13 +156,21 @@ function mockupInfo()
 
 	function getFrameInfo(infoLay)
 	{
-		
+		// rearrangeInfoTextFrames(infoLay);
+
+
+		//make an array of all the text frames on the info layer and sort them by name
+		var frames = arrayFromContainer(infoLay,"textFrames").sort(function(a,b)
+		{
+			return (a.name > b.name || a.name.indexOf("Order")>-1) ? 1 : -1;
+		})
+
 
 
 		var curFrame,curName,curContents;
-		for(var x=0;x<infoLay.textFrames.length;x++)
+		for(var x=0;x<frames.length;x++)
 		{
-			curFrame = infoLay.textFrames[x];
+			curFrame = frames[x];
 			curName = curFrame.name;
 			if(!frameInfo[curName])
 			{
@@ -176,6 +182,8 @@ function mockupInfo()
 		return frameInfo;
 	}
 
+
+
 	function createDialog(garmentName,frameInfo)
 	{
 		
@@ -183,33 +191,39 @@ function mockupInfo()
 		var w = new Window("dialog");
 		var msg = UI.static(w,"Input the appropriate data for " + garmentName);
 
-		var counter = 0;
+		var counter = 2;
 		var curGroup;
 		var len = 20;
 
-		
+		makeInputGroup("Order Number",0)
+		// inputGroups[0] = curGroup = UI.group(w);
+		// inputGroups[0].orientation = "row";
+		// inputGroups[0].msg = UI.static(curGroup,"Order Number",len);
+		// inputGroups[0].input = UI.edit(curGroup,frameInfo["Order Number"]);
+
+		makeInputGroup("Mockup Initials",1);
+		// inputGroups[1] = curGroup = UI.group(w);
+		// inputGroups[1].orientation = "row";
+		// inputGroups[1].msg = UI.static(curGroup,"Mockup Initials",len);
+		// inputGroups[1].input = UI.edit(curGroup,frameInfo["Mockup Initials"]);
 
 
-		var label;
 		for(var frameName in frameInfo)
 		{
 
-			if(frameName.indexOf("Order")>-1)
-				label = "Order Number";
-			else
-				label = frameName
-
-
-			//check for hidden items
-			if(hiddenFrames.indexOf(label.toLowerCase())>-1)
+			//skip hidden items, order number, and mockup initials.
+			if(hiddenFrames.indexOf(frameName.toLowerCase())>-1 || frameName.match(/order|init/i))
 			{
 				continue;
 			}
 
-			inputGroups[counter] = curGroup = UI.group(w);
-			inputGroups[counter].orientation = "row";
-			inputGroups[counter].msg = UI.static(curGroup,label,len);
-			inputGroups[counter].input = UI.edit(curGroup,frameInfo[frameName],len);
+			makeInputGroup(frameName,counter)
+			
+
+			// inputGroups[counter] = curGroup = UI.group(w);
+			// inputGroups[counter].orientation = "row";
+			// inputGroups[counter].msg = UI.static(curGroup,frameName,len);
+			// inputGroups[counter].input = UI.edit(curGroup,frameInfo[frameName],len*2);
 			counter++;
 
 		}
@@ -251,12 +265,20 @@ function mockupInfo()
 			}
 		}
 
+		function makeInputGroup(key,index)
+		{
+			inputGroups[index] = curGroup = UI.group(w);
+			inputGroups[index].orientation = "row";
+			inputGroups[index].msg = UI.static(curGroup,key,len);
+			inputGroups[index].input = UI.edit(curGroup,frameInfo[key],len*1.5);
+		}
+
 
 	}
 
 	function trimDate(str)
 	{
-		return str.replace(/[\s-_]?[\d]{2}\.[\d]{2}\.[\d]{2}/g,"");	
+		return str.replace(/[\s-_]?[\d]{2}[\.\/\\][\d]{2}[\.\/\\][\d]{2}/g,"");	
 	}
 
 	
@@ -275,6 +297,7 @@ function mockupInfo()
 		if(mm<10) {
 			mm='0'+mm
 		} 
+		debugger;
 		return mm+'.'+dd+'.'+yy;
 	}
 
@@ -289,14 +312,23 @@ function mockupInfo()
 		frames.forEach(function(a)
 		{
 			if(a.name.match(/(order)/i))
-				a.zOrder(ZOrderMethod.BRINGTOFRONT);
+				a.zOrder(ZOrderMethod.SENDTOBACK);
 			else if(a.name.match(/init/i))
 			{
-				a.zOrder(ZOrderMethod.BRINGTOFRONT);
-				a.zOrder(ZOrderMethod.SENDBACKWARD);
+				a.zOrder(ZOrderMethod.SENDTOBACK);
+				a.zOrder(ZOrderMethod.BRINGFORWARD);
 			}
 			else if(hiddenFrames.indexOf(a.name.toLowerCase())>-1)
-				a.zOrder(ZOrderMethod.SENDTOBACK);
+				a.zOrder(ZOrderMethod.BRINGTOFRONT);
+			// if(a.name.match(/(order)/i))
+			// 	a.zOrder(ZOrderMethod.BRINGTOFRONT);
+			// else if(a.name.match(/init/i))
+			// {
+			// 	a.zOrder(ZOrderMethod.BRINGTOFRONT);
+			// 	a.zOrder(ZOrderMethod.SENDBACKWARD);
+			// }
+			// else if(hiddenFrames.indexOf(a.name.toLowerCase())>-1)
+			// 	a.zOrder(ZOrderMethod.SENDTOBACK);
 		})
 	}
 
