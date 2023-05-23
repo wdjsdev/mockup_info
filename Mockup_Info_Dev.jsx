@@ -74,56 +74,31 @@ function mockupInfo ()
 	}
 
 
-	var garmentLayers = [];
 
-	layArray.forEach( function ( lay )
+	function makeDialog ( data )
 	{
-		var result = findSpecificLayer( lay, "Information" ) ? true : false;
-		result ? garmentLayers.push( lay ) : null;
-	} )
-
-	garmentLayers.forEach( function ( garLay, ind )
-	{
-		garLay.locked = false;
-		garLay.visible = true;
-		doc.artboards.setActiveArtboardIndex( ind );
+		var label = infoLayers[ 0 ].parent.name;
+		aB.setActiveArtboardIndex( 0 );
 		app.executeMenuCommand( "fitin" );
-		var infoLay = findSpecificLayer( garLay, "Information" );
-		infoLay.locked = false;
-		infoLay.visible = true;
-		var onFrame = findSpecificPageItem( infoLay, "order", "any" )
-		var initFrame = findSpecificPageItem( infoLay, "initial", "any" )
-		initFrame.zOrder( ZOrderMethod.BRINGTOFRONT );
-		onFrame.zOrder( ZOrderMethod.BRINGTOFRONT );
-
-		var infoText = afc( infoLay, "textFrames" ).filter( function ( tf )
-		{
-			return !tf.name.match( /mockup label|garment code|description|fabric type/i );
-		} )
-
-		var frameInfo = [];
-
-		infoText.forEach( function ( tf )
-		{
-			var result = { frame: tf, label: tf.name, contents: tf.contents }
-			frameInfo.push( result )
-		} )
-
 		var inputGroups = [];
-		var id = new Window( "dialog", "Garment Info: " + garLay.name );
+		var id = new Window( "dialog", "Garment Info: " + label );
 		var topMsg = UI.static( id, "Enter the Mockup Info" );
 		var igGroup = UI.group( id );
 		igGroup.orientation = "column";
 
-		frameInfo.forEach( function ( tf )
+		data.forEach( function ( tfd, ind )
 		{
-			var defaultInputTxt = tf.contents.replace( /\d{2}\.\d{2}\.\d{2}/, "" ).replace( /\s*\(last name\)/i, "" );
-			var defaultLabelTxt = tf.label.replace( /.*order.*/i, "Order Number Team Name" );
 			var g = UI.group( igGroup );
 			g.orientation = "row";
-			var lbl = g.labelText = UI.static( g, defaultLabelTxt, 20 );
+
+			var defaultInputTxt = tfd.contents.replace( /^\s*|\s*$|\d{2}\.\d{2}\.\d{2}\s*/g, "" ).replace( /\s*\(last name\)/i, "" );
+
+
+			var defaultLabelTxt = tfd.label.replace( /.*order.*/i, "Order Number Team Name" );
+			var lbl = g.labelText = UI.static( g, defaultLabelTxt + tfd.prefix, 25 );
 			lbl.justify = "right";
 			var input = g.inputText = UI.edit( g, defaultInputTxt, 30 );
+			ind === 0 ? input.active = true : null;
 			input.addEventListener( "keydown", function ( e )
 			{
 				if ( e.keyName === "Enter" )
@@ -131,41 +106,104 @@ function mockupInfo ()
 					submit();
 				}
 			} );
-			input.add
 			inputGroups.push( g );
 		} )
 
 		var btnGroup = UI.group( id );
 		var cancelBtn = UI.button( btnGroup, "Cancel", function ()
 		{
+			valid = false;
 			id.close();
 		} );
 		var submitBtn = UI.button( btnGroup, "Submit", submit )
 
 		function submit ()
 		{
-			inputGroups.forEach( function ( g )
+			inputGroups.forEach( function ( g, ind )
 			{
-				var input = g.inputText.text;
-				var lbl = g.labelText.text;
-				frameInfo.forEach( function ( fi )
-				{
-					if ( fi.label === lbl )
-					{
-						fi.frame.contents = input || "";
-						fi.frame.name.match( /init/i ) ? fi.frame.contents += " " + getDate() : null;
-					}
-				} )
+				var input = trimSpaces( g.inputText.text );
+				data[ ind ].contents = trimSpaces( data[ ind ].prefix + " " + input );
 			} )
 			id.close();
 		}
 
-		inputGroups[ 0 ].inputText.active = true;
 
 		id.show();
+	}
 
-		infoLay.locked = true;
+
+	function inputInfoText ( data )
+	{
+		data.forEach( function ( d )
+		{
+			infoLayers.forEach( function ( lay )
+			{
+				var frame = findSpecificPageItem( lay, d.label, "imatch" );
+				if ( !frame )
+				{
+					return;
+				}
+
+				frame.contents = d.contents;
+				frame.contents = frame.name.match( /init/i ) ? ( frame.contents.replace( /\s/g, "" ) + " " + getDate() ) : frame.contents;
+			} );
+		} );
+
+	}
+
+
+	var infoLayers = [];
+
+	layArray.forEach( function ( lay )
+	{
+		var result = findSpecificLayer( lay, "Information" );
+		result ? infoLayers.push( result ) : null;
+	} )
+
+
+	var frameInfo = [];
+	var infoFrames = [];
+	var frameNames = [];
+
+	//make an array of all the neccesary unique textFrames
+	infoLayers.forEach( function ( lay, ind )
+	{
+		lay.locked = false;
+		[ "design", "initial", "order" ].forEach( function ( str ) 
+		{
+			var frame = findSpecificPageItem( lay, str, "any" );
+			if ( !frame ) { return; }
+			frame.zOrder( ZOrderMethod.BRINGTOFRONT );
+		} )
+
+		//find any textFrames that aren't the mockup label, garment code, description, or fabric type
+		afc( lay, "textFrames" ).forEach( function ( tf )
+		{
+			if ( !tf.name.match( /mockup label|garment code|description|fabric type/i ) && frameNames.indexOf( tf.name ) < 0 )
+			{
+				frameNames.push( tf.name );
+				infoFrames.push( tf );
+			}
+		} );
+
+	} )
+
+	var prefixRegex = /^.*[\-\:]/i;
+
+	infoFrames.forEach( function ( frame )
+	{
+		var prefix = frame.contents.match( prefixRegex ) ? ( "  " + frame.contents.match( prefixRegex )[ 0 ] ) : "";
+		var contents = frame.contents.replace( prefixRegex, "" );
+		var name = frame.name;
+		frameInfo.push( { label: name, contents: contents, prefix: prefix } );
 	} );
+
+	makeDialog( frameInfo );
+
+	if ( valid )
+	{
+		inputInfoText( frameInfo );
+	}
 
 
 	return;
